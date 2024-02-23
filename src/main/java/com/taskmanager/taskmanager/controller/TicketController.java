@@ -23,7 +23,7 @@ public class TicketController {
     @PutMapping("/{id}/agent/{agentId}")
     public ResponseEntity<TicketDto> assignAgent(@PathVariable Long id, @PathVariable Long agentId) {
         TicketDto updatedTicket = ticketService.assignTicketToAgent(id, agentId);
-        return new ResponseEntity<>(updatedTicket, HttpStatus.CREATED);
+        return new ResponseEntity<>(updatedTicket, HttpStatus.OK);
     }
 
     @PutMapping("/{id}/resolve")

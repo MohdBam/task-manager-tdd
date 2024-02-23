@@ -188,7 +188,7 @@ public class TicketControllerTest {
         when(ticketService.closeTicket(ticketId)).thenThrow(new MissingResolutionSummaryException(Constants.MISSING_RESOLUTION_SUMMARY_EXCEPTION));
 
         // then
-        mockMvc.perform(put("/ticket/{id}/close", ticketId)
+        mockMvc.perform(put("/tickets/{id}/close", ticketId)
                     .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(Constants.MISSING_RESOLUTION_SUMMARY_EXCEPTION));
