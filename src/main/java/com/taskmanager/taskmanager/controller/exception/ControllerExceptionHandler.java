@@ -1,9 +1,6 @@
 package com.taskmanager.taskmanager.controller.exception;
 
-import com.taskmanager.taskmanager.exception.AgentNotFoundException;
-import com.taskmanager.taskmanager.exception.InvalidTicketStateException;
-import com.taskmanager.taskmanager.exception.MissingResolutionSummaryException;
-import com.taskmanager.taskmanager.exception.TicketNotFoundException;
+import com.taskmanager.taskmanager.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,5 +27,10 @@ public class ControllerExceptionHandler {
     @ExceptionHandler(MissingResolutionSummaryException.class)
     public ResponseEntity<String> handleMissingResolutionSummary(MissingResolutionSummaryException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalTicketStateException.class)
+    public ResponseEntity<String> handleIllegalTicketStateException(IllegalTicketStateException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
     }
 }

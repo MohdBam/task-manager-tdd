@@ -1,15 +1,13 @@
 package com.taskmanager.taskmanager.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.taskmanager.taskmanager.dto.TicketDto;
-import com.taskmanager.taskmanager.exception.AgentNotFoundException;
-import com.taskmanager.taskmanager.exception.InvalidTicketStateException;
-import com.taskmanager.taskmanager.exception.MissingResolutionSummaryException;
-import com.taskmanager.taskmanager.exception.TicketNotFoundException;
+import com.taskmanager.taskmanager.exception.*;
 import com.taskmanager.taskmanager.model.Status;
 import com.taskmanager.taskmanager.service.TicketService;
 import com.taskmanager.taskmanager.util.Constants;
@@ -192,5 +190,52 @@ public class TicketControllerTest {
                     .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(Constants.MISSING_RESOLUTION_SUMMARY_EXCEPTION));
+    }
+
+    @Test
+    void givenTicketNotClosed_whenTicketIsUpdated_thenTicketShouldBeUpdated() throws Exception {
+        // given
+        Long ticketId = 1L;
+
+        String updatedDescription = "Updated Description";
+
+        TicketDto updatedDetails = TicketDto.builder()
+                .id(ticketId)
+                .status(Status.NEW)
+                .description(updatedDescription)
+                .build();
+
+        // when
+        when(ticketService.updateTicket(eq(ticketId), any(TicketDto.class))).thenReturn(updatedDetails);
+
+        // then
+        mockMvc.perform(put("/tickets/{id}", ticketId)
+                        .content(objectMapper.writeValueAsString(updatedDetails))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").value(updatedDescription));
+    }
+
+    @Test
+    void givenTicketIsClosed_whenTicketIsUpdated_thenThrowException() throws Exception {
+        // given
+        Long ticketId = 99L;
+        String updatedDescription = "Updated Description";
+
+        TicketDto ticketDto = TicketDto.builder()
+                .id(ticketId)
+                .description(updatedDescription)
+                .build();
+
+        // when
+        when(ticketService.updateTicket(eq(ticketId), any(TicketDto.class))).thenThrow(
+                new IllegalTicketStateException(Constants.CLOSED_TICKETS_CANNOT_BE_UPDATED));
+
+        // then
+        mockMvc.perform(put("/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(ticketDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(Constants.CLOSED_TICKETS_CANNOT_BE_UPDATED));
     }
 }
