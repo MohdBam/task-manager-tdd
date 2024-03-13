@@ -1,11 +1,15 @@
 package com.taskmanager.taskmanager.controller;
 
 import com.taskmanager.taskmanager.dto.TicketDto;
+import com.taskmanager.taskmanager.dto.TicketFilterDto;
 import com.taskmanager.taskmanager.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -13,6 +17,17 @@ import org.springframework.web.bind.annotation.*;
 public class TicketController {
 
     private final TicketService ticketService;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TicketDto> getTicket(@PathVariable Long id) {
+        TicketDto ticketDto = ticketService.getTicketById(id);
+        return ResponseEntity.ok(ticketDto);
+    }
+
+    @GetMapping
+    public List<TicketDto> getTickets(@RequestParam @Validated TicketFilterDto ticketFilterDto)  {
+        return ticketService.getTickets(ticketFilterDto);
+    }
 
     @PostMapping
     public ResponseEntity<TicketDto> createTicket(@RequestBody TicketDto ticketDto) {

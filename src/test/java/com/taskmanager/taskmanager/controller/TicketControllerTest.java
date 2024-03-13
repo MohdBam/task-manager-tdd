@@ -1,5 +1,7 @@
 package com.taskmanager.taskmanager.controller;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -7,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.taskmanager.taskmanager.dto.TicketDto;
+import com.taskmanager.taskmanager.dto.TicketFilterDto;
 import com.taskmanager.taskmanager.exception.*;
 import com.taskmanager.taskmanager.model.Status;
 import com.taskmanager.taskmanager.service.TicketService;
@@ -19,6 +22,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @WebMvcTest(TicketController.class)
 public class TicketControllerTest {
@@ -237,5 +243,66 @@ public class TicketControllerTest {
                         .content(objectMapper.writeValueAsString(ticketDto)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(Constants.CLOSED_TICKETS_CANNOT_BE_UPDATED));
+    }
+
+    @Test
+    void givenTicketExists_whenGetTicketDetails_thenTicketDetailsAreReturned() throws Exception {
+
+        // given
+        Long ticketId = 1L;
+        String assignedAgent = "Agent001";
+        String description = "Description";
+
+        TicketDto ticketDto = TicketDto.builder()
+                .id(ticketId)
+                .description(description)
+                .assignedAgent(assignedAgent)
+                .status(Status.NEW)
+                .build();
+        // when
+        when(ticketService.getTicketById(eq(ticketId))).thenReturn(ticketDto);
+
+        // then
+        mockMvc.perform(get("/tickets/{id}", ticketId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(ticketDto)));
+    }
+
+    @Test
+    void givenFilterCriteria_whenGettingTickets_thenReturnFilteredTickets() throws Exception {
+        String agentName = "Agent001";
+        String ticketDescription = "Sample ticket description";
+        TicketDto ticketDto = TicketDto.builder()
+                .id(1L)
+                .description(ticketDescription)
+                .status(Status.NEW)
+                .closedDate(LocalDateTime.now())
+                .assignedAgent(agentName)
+                .build();
+
+        TicketDto ticketDto2 = TicketDto.builder()
+                .id(2L)
+                .description(ticketDescription)
+                .status(Status.NEW)
+                .closedDate(LocalDateTime.now().minusDays(2))
+                .assignedAgent(agentName)
+                .build();
+
+        List<TicketDto> filteredDto = List.of(ticketDto, ticketDto2);
+
+        when(ticketService.getTickets(any(TicketFilterDto.class))).thenReturn(filteredDto);
+
+        //then
+        mockMvc.perform(get("/tickets")
+                            .param("status", "NEW, IN_PROGRESS")
+                            .param("startDate", LocalDateTime.now().minusDays(3).toString())
+                            .param("endDate", LocalDateTime.now().toString())
+                            .param("assignedAgent", agentName)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(filteredDto.size())))
+                .andExpect(jsonPath("$[0].id", is(ticketDto.id().intValue())))
+                .andExpect(jsonPath("$[1].id", is(ticketDto2.id().intValue())));
     }
 }
