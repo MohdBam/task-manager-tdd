@@ -25,7 +25,7 @@ public class TicketController {
     }
 
     @GetMapping
-    public List<TicketDto> getTickets(@RequestParam @Validated TicketFilterDto ticketFilterDto)  {
+    public List<TicketDto> getTickets(@Validated TicketFilterDto ticketFilterDto)  {
         return ticketService.getTickets(ticketFilterDto);
     }
 
