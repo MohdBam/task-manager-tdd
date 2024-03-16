@@ -1,12 +1,14 @@
 package com.taskmanager.taskmanager.controller.exception;
 
 import com.taskmanager.taskmanager.exception.*;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
+//TODO generalise exception handling for all exceptions
 public class ControllerExceptionHandler {
 
     @ExceptionHandler(InvalidTicketStateException.class)
@@ -31,6 +33,11 @@ public class ControllerExceptionHandler {
 
     @ExceptionHandler(IllegalTicketStateException.class)
     public ResponseEntity<String> handleIllegalTicketStateException(IllegalTicketStateException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<String> handEntityNotFoundException(EntityNotFoundException ex) {
         return ResponseEntity.badRequest().body(ex.getMessage());
     }
 }

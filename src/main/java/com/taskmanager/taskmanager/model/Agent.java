@@ -2,46 +2,31 @@ package com.taskmanager.taskmanager.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.*;
 import org.hibernate.Hibernate;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
 @Setter
 @ToString
+@RequiredArgsConstructor
 @AllArgsConstructor
-@NoArgsConstructor
 @Builder
 @Entity
-public class Ticket {
+public class Agent {
 
     @Id
     private Long id;
 
-    private String description;
-
-    private Status status;
-
-    private LocalDateTime createdDate;
-
-    private LocalDateTime closedDate;
-
-    private String resolutionSummary;
-
-    @ManyToOne
-    @JoinColumn(name = "assigned_agent_id")
-    private Agent assignedAgent;
+    private String name;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        Ticket ticket = (Ticket) o;
-        return getId() != null && Objects.equals(getId(), ticket.getId());
+        Agent agent = (Agent) o;
+        return getId() != null && Objects.equals(getId(), agent.getId());
     }
 
     @Override
