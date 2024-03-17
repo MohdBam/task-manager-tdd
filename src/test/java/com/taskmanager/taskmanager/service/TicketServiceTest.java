@@ -258,4 +258,156 @@ public class TicketServiceTest {
                 () -> ticketService.assignTicketToAgent(ticketId, agentId));
     }
 
+    @Test
+    void givenTicketInProgress_whenResolving_thenStatusIsResolved() {
+        Long ticketId = 1L;
+        String description = "description";
+        LocalDateTime now = LocalDateTime.now();
+
+        Agent agent = Agent.builder()
+                .id(1L)
+                .name("Agent001")
+                .build();
+
+        Ticket ticket = Ticket.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.IN_PROGRESS)
+                .createdDate(now)
+                .assignedAgent(agent)
+                .build();
+
+        Ticket savedTicket = Ticket.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.RESOLVED)
+                .createdDate(now)
+                .assignedAgent(agent)
+                .build();
+
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.ofNullable(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
+
+        TicketDto actualTicketDto = ticketService.resolveTicket(ticketId);
+
+        Assertions.assertEquals(Status.RESOLVED, actualTicketDto.status());
+    }
+
+    @Test
+    void givenNonExistingTicket_whenResolving_thenThrowException() {
+        Long nonExistingTicketId = 999L;
+
+        when(ticketRepository.findById(nonExistingTicketId)).thenReturn(Optional.empty());
+
+        Assertions.assertThrows(TicketNotFoundException.class, () -> ticketService.resolveTicket(nonExistingTicketId));
+    }
+
+    @Test
+    void givenTicketNotInProgress_whenResolving_thenThrowException() {
+        Long ticketId = 1L;
+        String description = "description";
+        LocalDateTime now = LocalDateTime.now();
+
+        Ticket ticket = Ticket.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.NEW)
+                .createdDate(now)
+                .build();
+
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+
+        RuntimeException ex = Assertions.assertThrows(InvalidTicketStateException.class, () -> ticketService.resolveTicket(ticketId));
+        Assertions.assertEquals("Only IN_PROGRESS tickets can be resolved.", ex.getMessage());
+    }
+
+    @Test
+    void givenTicketIsResolvedWithSummary_whenClosingTicket_thenStatusIsClosed() {
+        Long ticketId = 1L;
+        String description = "description";
+        String resolutionSummary = "summary";
+        LocalDateTime beforeTwoDays = LocalDateTime.now().minusDays(2);
+        LocalDateTime now = LocalDateTime.now();
+
+        Agent agent = Agent.builder()
+                .id(1L)
+                .name("Agent001")
+                .build();
+
+        Ticket ticket = Ticket.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.RESOLVED)
+                .resolutionSummary(resolutionSummary)
+                .createdDate(beforeTwoDays)
+                .assignedAgent(agent)
+                .build();
+
+        Ticket savedTicket = Ticket.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.CLOSED)
+                .resolutionSummary(resolutionSummary)
+                .createdDate(beforeTwoDays)
+                .closedDate(now)
+                .assignedAgent(agent)
+                .build();
+
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.ofNullable(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
+
+        TicketDto actualTicketDto = ticketService.closeTicket(ticketId);
+
+        Assertions.assertEquals(Status.CLOSED, actualTicketDto.status());
+        Assertions.assertEquals(now, actualTicketDto.closedDate());
+    }
+
+    @Test
+    void givenNonExistingTicket_whenClosingTicket_thenThrowException() {
+        Long nonExistingTicketId = 999L;
+
+        when(ticketRepository.findById(nonExistingTicketId)).thenReturn(Optional.empty());
+
+        Assertions.assertThrows(TicketNotFoundException.class, () -> ticketService.closeTicket(nonExistingTicketId));
+    }
+
+    @Test
+    void givenTicketNotResolved_whenClosingTicket_thenThrowException() {
+        Long ticketId = 1L;
+        String description = "description";
+        LocalDateTime now = LocalDateTime.now();
+
+        Ticket ticket = Ticket.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.IN_PROGRESS)
+                .createdDate(now)
+                .build();
+
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.ofNullable(ticket));
+
+        RuntimeException ex = Assertions.assertThrows(InvalidTicketStateException.class, () -> ticketService.closeTicket(ticketId));
+        Assertions.assertEquals("Only RESOLVED tickets can be closed!", ex.getMessage());
+    }
+
+    @Test
+    void givenResolvedTicketWithoutSummary_whenClosingTicket_thenThrowException() {
+        Long ticketId = 1L;
+        String description = "description";
+        LocalDateTime beforeTwoDays = LocalDateTime.now().minusDays(2);
+
+        Ticket ticket = Ticket.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.RESOLVED)
+                .createdDate(beforeTwoDays)
+                .build();
+
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.ofNullable(ticket));
+
+        RuntimeException ex = Assertions.assertThrows(RuntimeException.class, () -> ticketService.closeTicket(ticketId));
+        Assertions.assertEquals("Resolution summary is missing!", ex.getMessage());
+    }
+
+
 }

@@ -73,12 +73,40 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public TicketDto resolveTicket(Long ticketId) {
-        return null;
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new TicketNotFoundException(Constants.TICKET_NOT_FOUND));
+
+        if (ticket.getStatus() != Status.IN_PROGRESS) {
+            throw new InvalidTicketStateException(Constants.ONLY_IN_PROGRESS_TICKETS_CAN_BE_RESOLVED);
+        }
+
+        ticket.setStatus(Status.RESOLVED);
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        return ticketMapper.toDto(savedTicket);
     }
 
     @Override
     public TicketDto closeTicket(Long ticketId) {
-        return null;
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new TicketNotFoundException(Constants.TICKET_NOT_FOUND));
+
+        Status ticketStatus = ticket.getStatus();
+
+        if (ticketStatus != Status.RESOLVED) {
+            throw new InvalidTicketStateException(Constants.ONLY_RESOLVED_TICKETS_CAN_BE_CLOSED);
+        }
+
+        if (!StringUtils.hasText(ticket.getResolutionSummary())) {
+            throw new MissingResolutionSummaryException(Constants.MISSING_RESOLUTION_SUMMARY_EXCEPTION);
+        }
+
+
+        ticket.setStatus(Status.CLOSED);
+        ticket.setClosedDate(LocalDateTime.now());
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        return ticketMapper.toDto(savedTicket);
     }
 
     @Override
