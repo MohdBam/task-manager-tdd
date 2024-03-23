@@ -409,5 +409,140 @@ public class TicketServiceTest {
         Assertions.assertEquals("Resolution summary is missing!", ex.getMessage());
     }
 
+    @Test
+    void givenTicketDescriptionAndResolutionSummary_whenUpdatingTicket_thenDescriptionAndResolutionSummaryAreUpdated() {
+        Long ticketId = 1L;
+        String description = "description";
+        String resolutionSummary = "summary";
+        String updatedDescription = "updated description";
+        String updatedResolutionSummary = "updated summary";
+        LocalDateTime beforeTwoDays = LocalDateTime.now().minusDays(2);
+        LocalDateTime now = LocalDateTime.now();
+
+        Agent agent = Agent.builder()
+                .id(1L)
+                .name("Agent001")
+                .build();
+
+        TicketDto ticketDto = TicketDto.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.RESOLVED)
+                .resolutionSummary(resolutionSummary)
+                .createdDate(beforeTwoDays)
+                .build();
+
+        Ticket ticket = Ticket.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.RESOLVED)
+                .resolutionSummary(resolutionSummary)
+                .createdDate(beforeTwoDays)
+                .assignedAgent(agent)
+                .build();
+
+        Ticket savedTicket = Ticket.builder()
+                .id(ticketId)
+                .description(updatedDescription)
+                .status(Status.RESOLVED)
+                .resolutionSummary(updatedResolutionSummary)
+                .createdDate(beforeTwoDays)
+                .assignedAgent(agent)
+                .build();
+
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.ofNullable(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
+
+        TicketDto actualTicketDto = ticketService.updateTicket(ticketId, ticketDto);
+
+        Assertions.assertEquals(updatedDescription, actualTicketDto.description());
+        Assertions.assertEquals(updatedResolutionSummary, actualTicketDto.resolutionSummary());
+    }
+
+    @Test
+    void givenNonExistingTicket_whenUpdatingTicket_thenThrowException() {
+        Long nonExistingTicketId = 999L;
+
+        when(ticketRepository.findById(nonExistingTicketId)).thenReturn(Optional.empty());
+
+        Assertions.assertThrows(TicketNotFoundException.class, () -> ticketService.updateTicket(nonExistingTicketId, TicketDto.builder().build()));
+    }
+
+    @Test
+    void givenTicketIsClosed_whenUpdatingTicket_thenThrowException() {
+        Long closedTicketId = 2L;
+
+        Long ticketId = 1L;
+        String description = "description";
+        String resolutionSummary = "summary";
+        LocalDateTime beforeTwoDays = LocalDateTime.now().minusDays(2);
+
+        Agent agent = Agent.builder()
+                .id(1L)
+                .name("Agent001")
+                .build();
+
+        TicketDto ticketDto = TicketDto.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.CLOSED)
+                .resolutionSummary(resolutionSummary)
+                .createdDate(beforeTwoDays)
+                .build();
+
+
+        Ticket ticket = Ticket.builder()
+                .id(ticketId)
+                .description(description)
+                .status(Status.CLOSED)
+                .resolutionSummary(resolutionSummary)
+                .createdDate(beforeTwoDays)
+                .assignedAgent(agent)
+                .build();
+
+        when(ticketRepository.findById(closedTicketId)).thenReturn(Optional.of(ticket));
+
+        Assertions.assertThrows(InvalidTicketStateException.class,
+                () -> ticketService.updateTicket(closedTicketId, ticketDto)
+        );
+    }
+
+    @Test
+    void givenExistingTicketId_whenGettingTicketById_thenCorrectTicketIsReturned() {
+        //given
+        Long ticketId = 1L;
+        Agent agent = Agent.builder()
+                .id(1L)
+                .name("Agent001")
+                .build();
+
+        Ticket ticket = Ticket.builder()
+                .id(ticketId)
+                .description("description")
+                .status(Status.NEW)
+                .createdDate(LocalDateTime.now())
+                .assignedAgent(agent)
+                .build();
+
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+
+        //when
+        TicketDto actualTicketDto = ticketService.getTicketById(ticketId);
+
+        //then
+        verify(ticketRepository, times(1)).findById(ticketId);
+        Assertions.assertEquals(ticketMapper.toDto(ticket), actualTicketDto);
+    }
+
+    @Test
+    void givenNonExistingTicketId_whenGettingTicketById_thenThrowException() {
+        //given
+        Long nonExistingTicketId = 999L;
+
+        when(ticketRepository.findById(nonExistingTicketId)).thenReturn(Optional.empty());
+
+        //then
+        Assertions.assertThrows(TicketNotFoundException.class, () -> ticketService.getTicketById(nonExistingTicketId));
+    }
 
 }
