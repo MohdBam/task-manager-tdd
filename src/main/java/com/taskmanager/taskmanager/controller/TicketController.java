@@ -3,10 +3,10 @@ package com.taskmanager.taskmanager.controller;
 import com.taskmanager.taskmanager.dto.TicketDto;
 import com.taskmanager.taskmanager.dto.TicketFilterDto;
 import com.taskmanager.taskmanager.service.TicketService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,7 +25,7 @@ public class TicketController {
     }
 
     @GetMapping
-    public List<TicketDto> getTickets(@Validated TicketFilterDto ticketFilterDto)  {
+    public List<TicketDto> getTickets(@Valid TicketFilterDto ticketFilterDto)  {
         return ticketService.getTickets(ticketFilterDto);
     }
 

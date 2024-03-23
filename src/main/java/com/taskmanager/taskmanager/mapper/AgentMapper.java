@@ -20,6 +20,9 @@ public abstract class AgentMapper {
     public abstract AgentDto toDto(Agent agent);
 
     public String toName(Agent agent) {
+        if (agent == null) {
+            return null;
+        }
         return agent.getName();
     }
 

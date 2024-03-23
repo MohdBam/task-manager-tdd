@@ -1,9 +1,6 @@
 package com.taskmanager.taskmanager.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -20,10 +17,12 @@ import java.util.Objects;
 public class Ticket {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String description;
 
+    @Enumerated(EnumType.STRING)
     private Status status;
 
     private LocalDateTime createdDate;

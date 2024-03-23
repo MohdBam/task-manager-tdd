@@ -1,10 +1,8 @@
 package com.taskmanager.taskmanager.service;
 
 import com.taskmanager.taskmanager.dto.TicketDto;
-import com.taskmanager.taskmanager.exception.AgentNotFoundException;
-import com.taskmanager.taskmanager.exception.InvalidTicketStateException;
-import com.taskmanager.taskmanager.exception.MissingDescriptionException;
-import com.taskmanager.taskmanager.exception.TicketNotFoundException;
+import com.taskmanager.taskmanager.dto.TicketFilterDto;
+import com.taskmanager.taskmanager.exception.*;
 import com.taskmanager.taskmanager.mapper.AgentMapper;
 import com.taskmanager.taskmanager.mapper.AgentMapperImpl;
 import com.taskmanager.taskmanager.mapper.TicketMapper;
@@ -22,9 +20,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.util.ReflectionUtils;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -543,6 +542,80 @@ public class TicketServiceTest {
 
         //then
         Assertions.assertThrows(TicketNotFoundException.class, () -> ticketService.getTicketById(nonExistingTicketId));
+    }
+
+    @Test
+    void givenFilterCriteria_whenGettingTickets_thenReturnFilteredTickets() {
+        //given
+        String agentName = "Agent001";
+
+        TicketFilterDto ticketFilterDto = TicketFilterDto.builder()
+                .status(Collections.singletonList(Status.NEW))
+                .assignedAgent(agentName)
+                .build();
+
+
+        List<Ticket> filteredTickets = List.of(
+                Ticket.builder()
+                        .id(1L)
+                        .description("description")
+                        .status(Status.NEW)
+                        .createdDate(LocalDateTime.now())
+                        .build(),
+                Ticket.builder()
+                        .id(2L)
+                        .description("description")
+                        .status(Status.NEW)
+                        .createdDate(LocalDateTime.now())
+                        .build()
+        );
+
+        when(ticketRepository.findWithFilters(
+                ticketFilterDto.status(),
+                ticketFilterDto.assignedAgent(),
+                ticketFilterDto.startDate(),
+                ticketFilterDto.endDate()
+        )).thenReturn(filteredTickets);
+
+        List<TicketDto> expectedTicketDtos = filteredTickets
+                .stream().map(ticketMapper::toDto)
+                .toList();
+
+
+        //when
+        List<TicketDto> actualTicketDtos = ticketService.getTickets(ticketFilterDto);
+
+        //then
+        verify(ticketRepository, times(1)).findWithFilters(
+                ticketFilterDto.status(),
+                ticketFilterDto.assignedAgent(),
+                ticketFilterDto.startDate(),
+                ticketFilterDto.endDate()
+        );
+        Assertions.assertEquals(expectedTicketDtos, actualTicketDtos);
+    }
+
+    @Test
+    void givenInvalidDateRange_whenGettingTickets_thenReturnFilteredTickets() {
+        //given
+        String agentName = "Agent001";
+
+        TicketFilterDto ticketFilterDto = TicketFilterDto.builder()
+                .status(Collections.singletonList(Status.NEW))
+                .assignedAgent(agentName)
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().minusDays(1))
+                .build();;
+
+
+
+        //when
+        List<TicketDto> actualTicketDtos = ticketService.getTickets(ticketFilterDto);
+
+        //then
+
+        Assertions.assertThrows(InvalidDateRangeException.class, () -> ticketService.getTickets(ticketFilterDto));
+
     }
 
 }

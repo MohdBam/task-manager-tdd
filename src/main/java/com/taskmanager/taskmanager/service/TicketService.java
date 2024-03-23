@@ -63,5 +63,11 @@ public interface TicketService {
      */
     TicketDto getTicketById(Long id);
 
+    /**
+     * Get all tickets
+     * @param filterDto The filter criteria.
+     * @return The list of TicketDto.
+     * @throws InvalidDateRangeException if the startDate is after endDate.
+     */
     List<TicketDto> getTickets(TicketFilterDto filterDto);
 }

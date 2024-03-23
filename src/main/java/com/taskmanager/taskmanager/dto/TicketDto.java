@@ -6,6 +6,7 @@ import lombok.Builder;
 
 import java.time.LocalDateTime;
 
+//TODO split readDto, createDto, and updateDto
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record TicketDto(

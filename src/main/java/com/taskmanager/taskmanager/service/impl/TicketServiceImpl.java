@@ -135,7 +135,21 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
+    //TODO add pagination
     public List<TicketDto> getTickets(TicketFilterDto filterDto) {
-        return null;
+
+        if (filterDto == null) {
+            return ticketRepository.findAll().stream().map(ticketMapper::toDto).toList();
+        }
+
+        if (filterDto.startDate() != null && filterDto.endDate() != null &&
+                filterDto.startDate().isAfter(filterDto.endDate())) {
+            throw new InvalidDateRangeException(Constants.START_DATE_CANNOT_BE_AFTER_END_DATE);
+        }
+
+        List<Ticket> filteredTickets = ticketRepository.findWithFilters(
+                filterDto.status(), filterDto.assignedAgent(), filterDto.startDate(), filterDto.endDate());
+
+        return filteredTickets.stream().map(ticketMapper::toDto).toList();
     }
 }

@@ -3,6 +3,7 @@ package com.taskmanager.taskmanager.util;
 public final class Constants {
 
 
+    public static final String START_DATE_CANNOT_BE_AFTER_END_DATE = "Start date cannot be after end date";
 
     private Constants() {} // Prevents instantiation
 
